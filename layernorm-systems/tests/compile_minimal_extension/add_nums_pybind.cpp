@@ -12,7 +12,7 @@ int add(int i, int j) {
 // average two integer values and return result
 double average(double i, double j) {
 
-    std::cout << "Hello, this is a test for averaging." << "\n";  // Test statement
+    std::cout << "Computing an average..." << "\n";  // Test statement
     return (i + j) / 2;
 
 }

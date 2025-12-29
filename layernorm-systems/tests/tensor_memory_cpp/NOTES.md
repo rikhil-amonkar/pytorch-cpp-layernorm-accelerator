@@ -34,4 +34,28 @@
 - Unlike Python, C++ doesn't have a REPL - you must compile then run.
 - The executable is created in the build directory after successful compilation.
 
+## Element-Wise Multiplication of Two Tensors in C++ (multiply_two_tensors.cpp)
+
+### Contract (pre-defined rules)
+
+Rules:
+- Two tensors much have:
+    - Same shape
+    - Same data type (dtype)
+    - Same device (stored)
+    - Contiguous memory (same memory location)
+
+### General Steps (Flow)
+
+- Step 1: Receive two tensor handles
+- Step 2: Verify contract assumptions
+- Step 3: Allocate output tensor with correct metadata
+- Step 4: Obtain raw memory pointers
+- Step 5: Loop over total elements
+- Step 6: Read from input A
+- Step 7: Read from input B
+- Step 8: Multiply
+- Step 9: Write to output
+- Step 10: Return output tensor
+
 

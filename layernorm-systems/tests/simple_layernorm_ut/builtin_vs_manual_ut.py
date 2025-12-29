@@ -3,17 +3,31 @@ import torch.nn as nn
 import numpy as np
 from layernorm_manual_test import forward, backward  # import pass functions
 
+# create list of special test cases
+test_cases = [
+    (1, 1),
+    (2, 1),
+    (1, 8),
+    # (8, 1),  # hard case
+    (3, 7),
+    (16, 128),
+    (40, 512),
+    (17, 513),
+    (64, 1024),
+    # (1024, 1)  # hard case
+]
+
 # create sample data tensor inputs
-def createSampleData():
+def createSampleData(case):
     
-    print("Creating sample data...")
+    print("\nCreating sample data...")
     
     # set random seed for reproducibility
     torch.manual_seed(42)
     np.random.seed(42)
 
     # create sample data (samples, dimensions)
-    n_samples, embedding_dim = 40, 512
+    n_samples, embedding_dim = case
     x = torch.randn(n_samples, embedding_dim)  # pytorch tensor for built-in layernorm
     
     return x, embedding_dim
@@ -100,9 +114,9 @@ def backwardPassUnitTest(x, ptln, output_manual, cache):
     
     # calculate means and stds for built-in and manual outputs
     torch_means = output_torch[0, :].mean()
-    torch_stds = output_torch[0, :].std()
+    torch_stds = output_torch[0, :].std() if len(output_torch[0, :]) > 1 else torch.tensor(0.0)  # handle single-element edge case
     man_means = output_manual[0, :].mean()
-    man_stds = output_manual[0, :].std()
+    man_stds = output_manual[0, :].std() if len(output_manual[0, :]) > 1 else torch.tensor(0.0)  # handle single-element edge case
     
     print(f"BW Single Position TORCH | Mean: {torch_means:.4f}, STD: {torch_stds:.4f}")
     print(f"BW Single Position MANUAL | Mean: {man_means:.4f}, STD: {man_stds:.4f}")
@@ -116,10 +130,15 @@ def backwardPassUnitTest(x, ptln, output_manual, cache):
 # run through all unit tests
 def runTests():
     print("\nStarting unit tests...")
-    x, dims = createSampleData()  # create input tensor
-    ptln = pyTorchLayerNorm(dims)  # initialize pytorch layernorm
-    output_manual, cache = forwardPassUnitTest(x, dims, ptln)  # test forward pass
-    backwardPassUnitTest(x, ptln, output_manual, cache)  # test backward pass 
+    print(f"TEST CASES: {test_cases}\n")
+    for case in test_cases:
+        print("="*50)
+        print(f"\nCASE: {case}")
+        x, dims = createSampleData(case)  # create input tensor
+        ptln = pyTorchLayerNorm(dims)  # initialize pytorch layernorm
+        output_manual, cache = forwardPassUnitTest(x, dims, ptln)  # test forward pass
+        backwardPassUnitTest(x, ptln, output_manual, cache)  # test backward pass 
+        print("\n" + "="*50)
     
 if __name__ == "__main__":
     runTests()

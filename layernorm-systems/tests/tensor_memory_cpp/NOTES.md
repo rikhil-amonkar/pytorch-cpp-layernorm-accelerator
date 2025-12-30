@@ -58,4 +58,18 @@ Rules:
 - Step 9: Write to output
 - Step 10: Return output tensor
 
+## Forward Pass Function in C++ (forward_pass_layernorm.cpp)
+
+### Calculation Process Breakdowns
+
+- Element-Wise Operations
+    - Normalization: ```xhat = xmu * ivar```
+    - Learnable Parameters: ```output = (gamma * xhat) + beta```
+    - Explanation: Both of these operations are element-wise, meaning, they are tensors that can be flattened, which then allows for a data pointer to be used to access memory and calculation instead of multiple "for loops".
+- Reductions (mean, sum, variance)
+    - Mean: ```mu = (1 / dims) * np.sum(x, axis=-1, keepdims=True)```
+    - Variance: ```var = (1 / dims) * np.sum(sq, axis=-1, keepdims=True)```
+    - Explanation: Both of these operations need to be performed per row/sample group so they cannot be flattened. They require nested loops with one outer branch and one inner branch to go over the groups and then sub-features.
+
+
 

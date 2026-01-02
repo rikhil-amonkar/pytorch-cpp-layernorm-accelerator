@@ -57,4 +57,3 @@ set_target_properties(unit_test PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 
-

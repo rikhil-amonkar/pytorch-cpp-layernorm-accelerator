@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include "forward.h"
+
 using namespace std;
 
 // function definition for performing forward pass on tensor via layer norm
@@ -22,25 +23,29 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
     // initialize an output tensor to store results
     torch::Tensor output = torch::empty_like(x);  // contract copy of input
 
-    // initialize a cache vectors to output calculation info
-    vector<torch::Tensor> cache_tensors;
+    // create a cache vector to store intermediate operation results
+    vector<torch::Tensor> cache{};  // empty
 
     // create initial data pointers for tensors (input/output)
     float *ptr_x = x.data_ptr<float>();
     float *ptr_out = output.data_ptr<float>();
 
-    // initialize calc vectors needed per-row/group
-    vector<float> mu(n);  // mean
-    vector<float> var(n);  // variance
-    vector<float> std(n);  // squared variance (std)
-    vector<float> ivar(n);  // inverse variance
+    // create calc tensors needed per-row/group
+    torch::Tensor mu = torch::empty_like(x);  // mean
+    torch::Tensor var = torch::empty_like(x);  // variance
+    torch::Tensor sqrtvar = torch::empty_like(x);  // squared variance (std)
+    torch::Tensor ivar = torch::empty_like(x);  // inverse variance
 
-    // initialize calc tensors needed per-feature for each row/group
+    // create calc tensors needed per-feature for each row/group
     torch::Tensor xmu = torch::empty_like(x);  // center mean
     torch::Tensor sq = torch::empty_like(x);  // variance prep
     torch::Tensor xhat = torch::empty_like(x);  // normalization
 
     // initialize data pointers for each calc tensor
+    float *ptr_mu = mu.data_ptr<float>();
+    float *ptr_var = var.data_ptr<float>();
+    float *ptr_sqrtvar = sqrtvar.data_ptr<float>();
+    float *ptr_ivar = ivar.data_ptr<float>();
     float *ptr_xmu = xmu.data_ptr<float>();
     float *ptr_sq = sq.data_ptr<float>();
     float *ptr_xhat = xhat.data_ptr<float>();
@@ -57,11 +62,11 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
         for (int j = 0; j < dims; j++) {
             mu_sum += ptr_x[(i * dims) + j];  // move past prev rows then correct column
         }
-        mu[i] = mu_sum / dims;  // store mean
+        ptr_mu[i] = mu_sum / dims;  // store mean
 
         // subtract mean from each feature in row (shift) and prep for std
         for (int j = 0; j < dims; j++) {
-            ptr_xmu[(i * dims) + j] = ptr_x[(i * dims) + j] - mu[i];  // subtract
+            ptr_xmu[(i * dims) + j] = ptr_x[(i * dims) + j] - ptr_mu[i];  // subtract
             ptr_sq[(i * dims) + j] = ptr_xmu[(i * dims) + j] * ptr_xmu[(i * dims) + j];  // square each center feature to prep for variance
         }
 
@@ -70,25 +75,26 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
         for (int j = 0; j < dims; j++) {
             var_sum += ptr_sq[(i * dims) + j];  // sum square center means
         }
-        var[i] = var_sum / dims;  // store variance
+        ptr_var[i] = var_sum / dims;  // store variance
 
         // add numerical stability via epsilon constant (convert var to std)
-        std[i] = sqrt((var[i] + epsilon));  // add constant (prevent div by 0)
+        ptr_sqrtvar[i] = sqrt((ptr_var[i] + epsilon));  // add constant (prevent div by 0)
 
         // invert standard deviation (for each row)
-        ivar[i] = 1 / std[i];
+        ptr_ivar[i] = 1 / ptr_sqrtvar[i];
 
         // execute normalization and apply learnable parameters
         for (int j = 0; j < dims; j++) {
-            ptr_xhat[(i * dims) + j] = ptr_xmu[(i * dims) + j] * ivar[i];
+            ptr_xhat[(i * dims) + j] = ptr_xmu[(i * dims) + j] * ptr_ivar[i];
             ptr_out[(i * dims) + j] = (ptr_gam[j] * ptr_xhat[(i * dims) + j]) + ptr_bet[j];  // gamma and beta only live on last dim
         }
 
     }
 
-    // store result tensors in cache after changes (for back pass)
-    cache_tensors.insert(end(cache_tensors), {xhat, xmu, sq, x, gamma, beta});  // add tensor cache to end of vector
+    // append intermediate operation tensors to cache vector
+    cache.insert(end(cache), {gamma, xhat, xmu, sqrtvar, ivar, var});  // add tensor cache to end of vector
 
-    return {output, mu, var, std, ivar, cache_tensors, epsilon};  // return struct data types (output, floats (vectors), tensors)
+    // (output tensor, learnable tensor, 3 calc tensors, 2 calc vectors, float constant)
+    return {output, cache, epsilon};  // return struct data types (output, floats (vectors), tensors)
 
 }

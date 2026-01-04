@@ -40,7 +40,7 @@ def forward(x, gamma, beta, epsilon=1e-5):
     out = (gamma * xhat) + beta
     
     # store intermediate values in cache
-    cache = (xhat, gamma, xmu, ivar, sqrtvar, var, epsilon, mu, x)
+    cache = (xhat, gamma, xmu, ivar, sqrtvar, var, epsilon)
     
     return out, cache
 
@@ -48,7 +48,7 @@ def forward(x, gamma, beta, epsilon=1e-5):
 def backward(dout, cache): 
     
     # unpack intermediate values from cache
-    xhat, gamma, xmu, ivar, sqrtvar, var, epsilon, mean, x = cache
+    xhat, gamma, xmu, ivar, sqrtvar, var, epsilon = cache
     
     # get dimensions of input/output (identical)
     n, dims = dout.shape

@@ -16,7 +16,9 @@
 - For input shape (batch_size, sequence_length, embedding_dim):
   - LayerNorm: Each (batch, sequence) position gets its own mean/variance computed over embedding_dim features.
   - BatchNorm: Each feature gets one mean/variance computed over all (batch, sequence) positions.
-- **All operations (mean, variance, gradient sums) use axis=-1 (last axis) for LayerNorm**, not axis=0.
+- **Normalization operations (mean, variance) use axis=-1 (last axis) for LayerNorm**, not axis=0.
+- **Parameter gradient accumulation (dgamma, dbeta) uses axis=0 (sum across samples)** to get one gradient per feature.
+- **Intermediate gradient calculations (divar, dmu) use axis=-1 (sum across features per sample)**.
 - The mathematical operations are identical, but the axis of normalization is different.
 
 - Create sample data via parameters for input tensor dimensions (batch_size, sequence_length, embedding_data).
@@ -36,8 +38,8 @@
 - Write the backward pass function which takes in dout (gradient of loss w.r.t. output) and the cache from the forward pass as input.
     - Unfold the variables that are stored in the cache (xhat, gamma, xmu, ivar, sqrtvar, var, eps, mean, x).
     - Get the dimensions of the input/output (usually same: batch_size, sequence_length, embedding_dim).
-    - Step 1: Calculate gradient w.r.t. beta (dbeta) - sum dout across the feature dimension (axis=-1, keepdims=True) since output = gamma * xhat + beta. NOTE: This is axis=-1 for LayerNorm, NOT axis=0 like BatchNorm.
-    - Step 2: Calculate gradient w.r.t. gamma (dgamma) - sum (dout * xhat) across the feature dimension (axis=-1, keepdims=True) since output = gamma * xhat + beta. NOTE: This is axis=-1 for LayerNorm, NOT axis=0 like BatchNorm.
+    - Step 1: Calculate gradient w.r.t. beta (dbeta) - sum dout across the batch dimension (axis=0) since output = gamma * xhat + beta. NOTE: For LayerNorm, gamma and beta are per-feature parameters, so we sum across samples (axis=0) to accumulate gradients from all samples, resulting in one gradient value per feature.
+    - Step 2: Calculate gradient w.r.t. gamma (dgamma) - sum (dout * xhat) across the batch dimension (axis=0) since output = gamma * xhat + beta. NOTE: Same as dbeta - we sum across samples (axis=0) to accumulate gradients from all samples, resulting in one gradient value per feature.
     - Step 3: Calculate gradient w.r.t. xhat (dxhat) - multiply dout by gamma since the gradient flows through the scaling operation.
     - Step 4: Calculate gradient w.r.t. inverse variance (divar) - sum (dxhat * xmu) across the feature dimension (axis=-1, keepdims=True) since xhat = xmu * ivar. NOTE: axis=-1 for LayerNorm.
     - Step 5: Calculate first component of gradient w.r.t. xmu (dxmu1) - multiply dxhat by ivar.

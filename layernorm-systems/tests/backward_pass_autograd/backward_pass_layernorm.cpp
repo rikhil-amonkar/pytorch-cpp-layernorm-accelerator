@@ -3,7 +3,6 @@
 #include <iostream>
 #include <cmath>
 #include "backward_pass_layernorm.h"
-#include "../forward_pass/forward_pass_layernorm.h"
 using namespace std;
 
 // forward pass output (for ref) = {output, (gamma, xhat, xmu, sqrtvar, ivar, var), epsilon}
@@ -50,15 +49,15 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
 
     // create intermediate ops tensors (temp)
     torch::Tensor dxhat = torch::empty_like(xhat);
-    torch::Tensor divar = torch::empty_like(ivar);
+    torch::Tensor divar = torch::empty_like(var);
     torch::Tensor dxmu1 = torch::empty_like(xhat);
-    torch::Tensor dsqrtvar = torch::empty_like(sqrtvar);
+    torch::Tensor dsqrtvar = torch::empty_like(var);
     torch::Tensor dvar = torch::empty_like(var);
-    torch::Tensor dsq = torch::empty_like(var);
+    torch::Tensor dsq = torch::empty_like(xhat);
     torch::Tensor dxmu2 = torch::empty_like(xhat);
-    torch::Tensor dx1 = torch::empty_like(dxmu2);
-    torch::Tensor dmu = torch::empty_like(dx1);
-    torch::Tensor dx2 = torch::empty_like(dmu);
+    torch::Tensor dx1 = torch::empty_like(xhat);
+    torch::Tensor dmu = torch::empty_like(var);
+    torch::Tensor dx2 = torch::empty_like(xhat);
 
     // initiate data pointers for intermediate ops tensors
     float *ptr_dxhat = dxhat.data_ptr<float>();  // 2-D (N, D)
@@ -135,48 +134,48 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
 
 }
 
-int main() {
+// int main() {
     
-    // create sample input tensor
-    int n_samples = 5, embedding_dims = 3;
-    torch::Tensor x = torch::rand({n_samples, embedding_dims}, torch::dtype(torch::kFloat32).device(torch::kCPU));  // 5x3, float32, cpu
-    torch::Tensor gamma = torch::ones(embedding_dims);  // gamma
-    torch::Tensor beta = torch::zeros(embedding_dims);  // beta 
+//     // create sample input tensor
+//     int n_samples = 5, embedding_dims = 3;
+//     torch::Tensor x = torch::rand({n_samples, embedding_dims}, torch::dtype(torch::kFloat32).device(torch::kCPU));  // 5x3, float32, cpu
+//     torch::Tensor gamma = torch::ones(embedding_dims);  // gamma
+//     torch::Tensor beta = torch::zeros(embedding_dims);  // beta 
 
-    cout << "\nForward Pass Function (LayerNorm C++)!" << endl;
+//     cout << "\nForward Pass Function (LayerNorm C++)!" << endl;
 
-    // call forward pass
-    forwardOutput result_forward = forwardPassLayerNorm(x, gamma, beta);  // struct result type
+//     // call forward pass
+//     forwardOutput result_forward = forwardPassLayerNorm(x, gamma, beta);  // struct result type
 
-    // extract mean and std to check values across first row
-    float mean_f = result_forward.output[0].mean().item<float>();
-    float std_f = result_forward.output[0].std().item<float>();
+//     // extract mean and std to check values across first row
+//     float mean_f = result_forward.output[0].mean().item<float>();
+//     float std_f = result_forward.output[0].std().item<float>();
 
-    // print results
-    cout << "\n===================================" << endl;
-    cout << "Input Tensor SIZE: " << x.sizes() << endl;
-    cout << format("FW Output Tensor MEAN: {:.4f} (should be ~0)", mean_f) << endl;
-    cout << format("FW Output Tensor STD: {:.4f} (should be ~1)", std_f) << endl;
-    cout << "===================================\n" << endl;
+//     // print results
+//     cout << "\n===================================" << endl;
+//     cout << "Input Tensor SIZE: " << x.sizes() << endl;
+//     cout << format("FW Output Tensor MEAN: {:.4f} (should be ~0)", mean_f) << endl;
+//     cout << format("FW Output Tensor STD: {:.4f} (should be ~1)", std_f) << endl;
+//     cout << "===================================\n" << endl;
 
-    cout << "\nBackward Pass Function (LayerNorm C++)!" << endl;
+//     cout << "\nBackward Pass Function (LayerNorm C++)!" << endl;
 
-    // forward pass output (for ref) = {output, gamma, xhat, xmu, sqrtvar, ivar, var, epsilon}
+//     // forward pass output (for ref) = {output, gamma, xhat, xmu, sqrtvar, ivar, var, epsilon}
 
-    // create sample backpass dout input tensor
-    torch::Tensor dout = torch::randn_like(result_forward.output);
+//     // create sample backpass dout input tensor
+//     torch::Tensor dout = torch::randn_like(result_forward.output);
 
-    // call backward pass
-    backwardOutput result_backward = backwardPassLayerNorm(dout, result_forward.cache, result_forward.epsilon);
+//     // call backward pass
+//     backwardOutput result_backward = backwardPassLayerNorm(dout, result_forward.cache, result_forward.epsilon);
 
-    // display the results of the backward pass magnitudes
-    cout << "\n===================================" << endl;
-    cout << "Input Tensor SIZE: " << x.sizes() << endl;
-    cout << "BW Output Tensor (dx):\n" << result_backward.dx << endl;
-    cout << "BW Output Tensor (dgamma):\n" << result_backward.dgamma << endl;
-    cout << "BW Output Tensor (dbeta):\n" << result_backward.dbeta << endl;
-    cout << "===================================\n" << endl;
+//     // display the results of the backward pass magnitudes
+//     cout << "\n===================================" << endl;
+//     cout << "Input Tensor SIZE: " << x.sizes() << endl;
+//     cout << "BW Output Tensor (dx):\n" << result_backward.dx << endl;
+//     cout << "BW Output Tensor (dgamma):\n" << result_backward.dgamma << endl;
+//     cout << "BW Output Tensor (dbeta):\n" << result_backward.dbeta << endl;
+//     cout << "===================================\n" << endl;
 
-    return 0;
+//     return 0;
 
-}
+// }

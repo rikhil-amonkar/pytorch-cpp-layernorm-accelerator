@@ -13,6 +13,6 @@ struct backwardOutput {
 };
 
 // Backward pass function decleration
-backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<float> var, vector<float> ivar, vector<torch::Tensor> cache, float epsilon);
+backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> cache, float epsilon);
 
 #endif  // BACKWARD_PASS_LAYERNORM_H

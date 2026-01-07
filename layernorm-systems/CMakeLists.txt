@@ -29,15 +29,15 @@ FetchContent_MakeAvailable(Catch2)
 
 # add executable files (path is relative to CMakeLists.txt location)
 add_executable(multiply_two_tensors tests/tensor_memory_cpp/multiply_two_tensors.cpp)
-add_library(forward_pass_layernorm tests/forward_pass/forward_pass_layernorm.cpp)
-add_executable(backward_pass_layernorm tests/backward_pass_autograd/backward_pass_layernorm.cpp)
-# add_executable(unit_test_forward tests/forward_pass/unit_test_forward_pass.cpp)
+add_library(forward_pass_layernorm STATIC tests/forward_pass/forward_pass_layernorm.cpp)
+add_library(backward_pass_layernorm STATIC tests/backward_pass_autograd/backward_pass_layernorm.cpp)
+add_executable(unit_test tests/backward_pass_autograd/unit_test_layernorm.cpp)
 
 # set target libraries
 target_link_libraries(multiply_two_tensors "${TORCH_LIBRARIES}")
 target_link_libraries(forward_pass_layernorm "${TORCH_LIBRARIES}")
 target_link_libraries(backward_pass_layernorm PRIVATE forward_pass_layernorm "${TORCH_LIBRARIES}")
-# target_link_libraries(unit_test_forward PRIVATE forward_pass_layernorm "${TORCH_LIBRARIES}" Catch2::Catch2WithMain)
+target_link_libraries(unit_test PRIVATE forward_pass_layernorm backward_pass_layernorm "${TORCH_LIBRARIES}" Catch2::Catch2WithMain)
 
 # Set rpath to find libtorch libraries at runtime
 set_target_properties(multiply_two_tensors PROPERTIES
@@ -58,10 +58,10 @@ set_target_properties(backward_pass_layernorm PROPERTIES
     INSTALL_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
-# set_target_properties(unit_test_forward PROPERTIES
-#     CXX_STANDARD 20
-#     BUILD_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
-#     INSTALL_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
-#     INSTALL_RPATH_USE_LINK_PATH TRUE
-# )
+set_target_properties(unit_test PROPERTIES
+    CXX_STANDARD 20
+    BUILD_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
+    INSTALL_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
 

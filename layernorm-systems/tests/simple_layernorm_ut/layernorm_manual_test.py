@@ -50,6 +50,8 @@ def backward(dout, cache):
     # unpack intermediate values from cache
     xhat, gamma, xmu, ivar, sqrtvar, var, epsilon = cache
     
+    print(xhat.shape, gamma.shape, xmu.shape, ivar.shape, sqrtvar.shape, var.shape)
+    
     # get dimensions of input/output (identical)
     n, dims = dout.shape
     

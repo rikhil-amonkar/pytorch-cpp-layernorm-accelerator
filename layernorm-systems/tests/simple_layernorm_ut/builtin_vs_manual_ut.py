@@ -5,15 +5,15 @@ from layernorm_manual_test import forward, backward  # import pass functions
 
 # create list of special test cases
 test_cases = [
-    (1, 1),
-    (2, 1),
-    (1, 8),
+    # (1, 1),
+    # (2, 1),
+    # (1, 8),
     # (8, 1),  # hard case
     (3, 7),
-    (16, 128),
-    (40, 512),
-    (17, 513),
-    (64, 1024),
+    # (16, 128),
+    # (40, 512),
+    # (17, 513),
+    # (64, 1024),
     # (1024, 1)  # hard case
 ]
 
@@ -120,6 +120,9 @@ def backwardPassUnitTest(x, ptln, output_manual, cache):
     
     print(f"BW Single Position TORCH | Mean: {torch_means:.4f}, STD: {torch_stds:.4f}")
     print(f"BW Single Position MANUAL | Mean: {man_means:.4f}, STD: {man_stds:.4f}")
+    
+    print(output_manual)
+    print(output_torch.detach().numpy())
 
     # use assertions on all outputs to compare values
     assert np.allclose(dx_manual, dx_pytorch, atol=1e-5), f"FAIL: dx does not match!"

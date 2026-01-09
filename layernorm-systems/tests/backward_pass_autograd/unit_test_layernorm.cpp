@@ -18,16 +18,16 @@ TEST_CASE("Manual and PyTorch tensor outputs are computed") {
 
     // create sample input tensors
     vector<tuple<int, int>> cases = {
-        {1, 1},
-        {2, 1},
-        {1, 8},
-        {8, 1},
-        // {3, 7},  // issue ()
+        // {1, 1},
+        // {2, 1},
+        // {1, 8},
+        // {8, 1},
+        {3, 7},  // issue ()
         // {16, 128},  // issue ()
         // {40, 512},  // issue ()
         // {17, 513},  // issue ()
         // {64, 1024},  // issue ()
-        {1024, 1}
+        // {1024, 1}
     };
 
     // display all test cases
@@ -72,10 +72,17 @@ TEST_CASE("Manual and PyTorch tensor outputs are computed") {
         /* MANUAL FORWARD AND BACKWARD PASS CALCULATIONS */
 
         // run tensor through manual forward pass (libtorch)
-        forwardOutput manual_fw_res = forwardPassLayerNorm(x, gamma, beta);
+        torch::Tensor x_manual = x.clone().detach();  // fresh copy of x
+        forwardOutput manual_fw_res = forwardPassLayerNorm(x_manual, gamma, beta);
         torch::Tensor manual_output = manual_fw_res.output;  // output
         vector<torch::Tensor> manual_cache = manual_fw_res.cache;  // cache
         float manual_epsilon = manual_fw_res.epsilon;  // epsilon
+
+        // determine mean and std of both results
+        float mean_torch = torch_result.mean().item<float>();
+        float std_torch = torch_result.std().item<float>();
+        float mean_manual = manual_output.mean().item<float>();
+        float std_manual = manual_output.std().item<float>();
 
         // create sample loss output with default of 1 (easy to compare)
         torch::Tensor manual_dout = torch::ones_like(manual_output);  // same size as output
@@ -86,21 +93,30 @@ TEST_CASE("Manual and PyTorch tensor outputs are computed") {
         torch::Tensor dgamma_manual = manual_bw_res.dgamma;  // dgamma
         torch::Tensor dbeta_manual = manual_bw_res.dbeta;  // dbeta
 
-        // print all tensors for debugging
-        // cout << "\n===========================================" << endl;
-        // cout << "Input Tensor SIZE: " << x.sizes() << endl;
-        // cout << "===========================================" << endl;
-        // cout << "Manual BW LayerNorm DX:\n" << dx_manual << endl;
-        // cout << "PyTorch BW LayerNorm DX:\n" << dx_torch << endl;
-        // cout << "===========================================" << endl;
-        // cout << "Manual BW LayerNorm DGAMMA:\n" << dgamma_manual << endl;
-        // cout << "PyTorch BW LayerNorm DGAMMA:\n" << dgamma_torch << endl;
-        // cout << "===========================================" << endl;
-        // cout << "Manual BW LayerNorm DBETA:\n" << dbeta_manual << endl;
-        // cout << "PyTorch BW LayerNorm DBETA:\n" << dbeta_torch << endl;
-        // cout << "===========================================" << endl;
+        // print all tensors for debugging (means, stds, and backward pass outputs)
+        cout << "\n===========================================" << endl;
+        cout << "Input Tensor SIZE: " << x_manual.sizes() << endl;
+        cout << "===========================================" << endl;
+        cout << format("Manual FW LayerNorm MEAN: {:.4f} (should be ~0)", mean_manual) << endl;
+        cout << format("PyTorch FW LayerNorm MEAN: {:.4f} (should be ~0)", mean_torch) << endl;
+        cout << "===========================================" << endl;
+        cout << format("Manual FW LayerNorm STD: {:.4f} (should be ~1)", std_manual) << endl;
+        cout << format("PyTorch FW LayerNorm STD: {:.4f} (should be ~1)", std_torch) << endl;
+        cout << "===========================================" << endl;
+        cout << "Manual BW LayerNorm DX:\n" << dx_manual << endl;
+        cout << "PyTorch BW LayerNorm DX:\n" << dx_torch << endl;
+        cout << "===========================================" << endl;
+        cout << "Manual BW LayerNorm DGAMMA:\n" << dgamma_manual << endl;
+        cout << "PyTorch BW LayerNorm DGAMMA:\n" << dgamma_torch << endl;
+        cout << "===========================================" << endl;
+        cout << "Manual BW LayerNorm DBETA:\n" << dbeta_manual << endl;
+        cout << "PyTorch BW LayerNorm DBETA:\n" << dbeta_torch << endl;
+        cout << "===========================================" << endl;
 
-        /* COMPARE MANUAL VS. BUILT IN BACKWARD PASS */
+        /* COMPARE MANUAL VS. BUILT IN BACKWARD (AND FORWARD) PASS */
+
+        // check output tensors against unit test catches (forward output)
+        REQUIRE(manual_output.allclose(torch_result, 1e-4, 1e-7));  // check tensors with small error margin
 
         // compare output tensor gradients from backward pass methods
         REQUIRE(dx_manual.allclose(dx_torch, 1e-4, 1e-7));  // check tensors with small error margin

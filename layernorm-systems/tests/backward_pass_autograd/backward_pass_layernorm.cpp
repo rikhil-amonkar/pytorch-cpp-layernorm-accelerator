@@ -76,9 +76,9 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
 
         // linear scaling for learnable parameters (gradients)
         for (int j = 0; j < dims; j++) {
-            ptr_dxhat[(i * dims) + j] = (ptr_dout[(i * dims) + j] * ptr_gamma[j]);  // dxhat
             ptr_dbeta[j] += ptr_dout[(i * dims) + j];  // dbeta
             ptr_dgamma[j] += (ptr_dout[(i * dims) + j] * ptr_xhat[(i * dims) + j]);  // dgamma
+            ptr_dxhat[(i * dims) + j] = (ptr_dout[(i * dims) + j] * ptr_gamma[j]);  // dxhat
         }
 
         // calculate gradient variance (w.r.t.) inverse variance

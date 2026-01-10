@@ -30,10 +30,10 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
     float *ptr_out = output.data_ptr<float>();
 
     // create calc tensors needed per-row/group
-    torch::Tensor mu = torch::zeros({n});  // mean
-    torch::Tensor var = torch::zeros({n});  // variance
-    torch::Tensor sqrtvar = torch::zeros({n});  // squared variance (std)
-    torch::Tensor ivar = torch::zeros({n});  // inverse variance
+    torch::Tensor mu = torch::empty_like(x);  // mean
+    torch::Tensor var = torch::empty_like(x);  // variance
+    torch::Tensor sqrtvar = torch::empty_like(x);  // squared variance (std)
+    torch::Tensor ivar = torch::empty_like(x);  // inverse variance
 
     // create calc tensors needed per-feature for each row/group
     torch::Tensor xmu = torch::empty_like(x);  // center mean

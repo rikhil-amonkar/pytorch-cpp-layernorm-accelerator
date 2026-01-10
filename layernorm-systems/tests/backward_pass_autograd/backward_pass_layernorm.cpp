@@ -10,19 +10,19 @@ using namespace std;
 // function definition for performing backward pass on output and cache via layernorm
 backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> cache, float epsilon) {
 
-    // extract intermediate values from forward pass cache
-    torch::Tensor gamma = cache[0];
-    torch::Tensor xhat = cache[1];
-    torch::Tensor xmu = cache[2];
-    torch::Tensor sqrtvar = cache[3];
-    torch::Tensor ivar = cache[4];
-    torch::Tensor var = cache[5];
+    // extract intermediate values from forward pass cache (also guarantee row-major)
+    torch::Tensor gamma = cache[0].contiguous();
+    torch::Tensor xhat = cache[1].contiguous();
+    torch::Tensor xmu = cache[2].contiguous();
+    torch::Tensor sqrtvar = cache[3].contiguous();
+    torch::Tensor ivar = cache[4].contiguous();
+    torch::Tensor var = cache[5].contiguous();
 
     // validate forward pass output with backward pass input tensor (contract)
     TORCH_CHECK(dout.sizes() == xhat.sizes(), "Input tensor does not match the correct element size.");  // element-wise ops
     TORCH_CHECK(dout.dtype() == xhat.dtype(), "Input tensor has an invalid data types.");  // data type (for pointer)
     TORCH_CHECK(dout.device() == xhat.device(), "Input tensor is not located on the correct device.");  // memory location
-    TORCH_CHECK(dout.is_contiguous() && xhat.is_contiguous(), "Input tensors are not contiguous.");  // data layout order
+    TORCH_CHECK(dout.is_contiguous(), "Input tensor is not contiguous.");  // data layout order
 
     // get dimensions of tensor (input/output)
     int dims = dout.size(-1);  // last dim
@@ -48,16 +48,16 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
     float *ptr_var = var.data_ptr<float>();  // 1-D (N,)
 
     // create intermediate ops tensors (temp)
-    torch::Tensor dxhat = torch::zeros_like(xhat);
-    torch::Tensor divar = torch::zeros_like(var);
-    torch::Tensor dxmu1 = torch::zeros_like(xhat);
-    torch::Tensor dsqrtvar = torch::zeros_like(var);
-    torch::Tensor dvar = torch::zeros_like(var);
-    torch::Tensor dsq = torch::zeros_like(xhat);
-    torch::Tensor dxmu2 = torch::zeros_like(xhat);
-    torch::Tensor dx1 = torch::zeros_like(xhat);
-    torch::Tensor dmu = torch::zeros_like(var);
-    torch::Tensor dx2 = torch::zeros_like(xhat);
+    torch::Tensor dxhat = torch::empty_like(xhat);
+    torch::Tensor divar = torch::empty({n}, xhat.options());  // 1-D but xhat parameters
+    torch::Tensor dxmu1 = torch::empty_like(xhat);
+    torch::Tensor dsqrtvar = torch::empty({n}, xhat.options());  // 1-D but xhat parameters
+    torch::Tensor dvar = torch::empty({n}, xhat.options());  // 1-D but xhat parameters
+    torch::Tensor dsq = torch::empty_like(xhat);
+    torch::Tensor dxmu2 = torch::empty_like(xhat);
+    torch::Tensor dx1 = torch::empty_like(xhat);
+    torch::Tensor dmu = torch::empty({n}, xhat.options());  // 1-D but xhat parameters
+    torch::Tensor dx2 = torch::empty_like(xhat);
 
     // initiate data pointers for intermediate ops tensors
     float *ptr_dxhat = dxhat.data_ptr<float>();  // 2-D (N, D)
@@ -97,7 +97,7 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
         ptr_dsqrtvar[i] = (-1.0f / (ptr_sqrtvar[i] * ptr_sqrtvar[i])) * ptr_divar[i];  // dsqrtvar
 
         // calculate gradient (w.r.t.) variance via chain rule
-        ptr_dvar[i] = 0.5f * (1.0f / sqrt(ptr_var[i] + epsilon)) * ptr_dsqrtvar[i];  // dvar
+        ptr_dvar[i] = 0.5f * (1.0f / ptr_sqrtvar[i]) * ptr_dsqrtvar[i];  // dvar
 
         // calculate gradient (w.r.t.) squared deviations via chain rule
         for (int j = 0; j < dims; j++) {

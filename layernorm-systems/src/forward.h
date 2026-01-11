@@ -10,10 +10,10 @@ using namespace std;
 struct forwardOutput {
     torch::Tensor output;
     vector<torch::Tensor> cache;
-    float epsilon;
+    double epsilon;
 };
 
 // forward pass function decleration
-forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::Tensor beta, float epsilon = 1e-5);
+forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::Tensor beta, double epsilon = 1e-5);
 
 #endif  // FORWARD_PASS_LAYERNORM_H

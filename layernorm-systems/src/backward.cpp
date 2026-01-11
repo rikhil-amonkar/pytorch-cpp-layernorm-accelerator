@@ -7,7 +7,7 @@
 using namespace std;
 
 // function definition for performing backward pass on output and cache via layernorm
-backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> cache, float epsilon) {
+backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> cache, double epsilon) {
 
     // extract intermediate values from forward pass cache (also guarantee row-major)
     torch::Tensor gamma = cache[0].contiguous();
@@ -29,22 +29,22 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
 
     // create backpass output tensors
     torch::Tensor dx = torch::zeros_like(dout);
-    torch::Tensor dgamma = torch::zeros(dims);  // accumulator (gamma)
-    torch::Tensor dbeta = torch::zeros(dims);  // accumulator (beta)
+    torch::Tensor dgamma = torch::zeros({dims}, dout.options());  // accumulator (gamma)
+    torch::Tensor dbeta = torch::zeros({dims}, dout.options());  // accumulator (beta)
 
     // initiate data pointers for output tensors (element-wise ops)
-    float *ptr_dx = dx.data_ptr<float>();  // 2-D (N, D)
-    float *ptr_dgamma = dgamma.data_ptr<float>();  // 1-D (D,)
-    float *ptr_dbeta = dbeta.data_ptr<float>();  // 1-D (D,)
+    double *ptr_dx = dx.data_ptr<double>();  // 2-D (N, D)
+    double *ptr_dgamma = dgamma.data_ptr<double>();  // 1-D (D,)
+    double *ptr_dbeta = dbeta.data_ptr<double>();  // 1-D (D,)
     
     // initiate data pointers for cache tensors (element-wise ops)
-    float *ptr_dout = dout.data_ptr<float>();  // 2-D (N, D)
-    float *ptr_gamma = gamma.data_ptr<float>();  // 1-D (D,)
-    float *ptr_xhat = xhat.data_ptr<float>();  // 2-D (N, D)
-    float *ptr_xmu = xmu.data_ptr<float>();  // 2-D (N, D)
-    float *ptr_sqrtvar = sqrtvar.data_ptr<float>();  // 1-D (N,)
-    float *ptr_ivar = ivar.data_ptr<float>();  // 1-D (N,)
-    float *ptr_var = var.data_ptr<float>();  // 1-D (N,)
+    double *ptr_dout = dout.data_ptr<double>();  // 2-D (N, D)
+    double *ptr_gamma = gamma.data_ptr<double>();  // 1-D (D,)
+    double *ptr_xhat = xhat.data_ptr<double>();  // 2-D (N, D)
+    double *ptr_xmu = xmu.data_ptr<double>();  // 2-D (N, D)
+    double *ptr_sqrtvar = sqrtvar.data_ptr<double>();  // 1-D (N,)
+    double *ptr_ivar = ivar.data_ptr<double>();  // 1-D (N,)
+    double *ptr_var = var.data_ptr<double>();  // 1-D (N,)
 
     // create intermediate ops tensors (temp)
     torch::Tensor dxhat = torch::empty_like(xhat);
@@ -59,16 +59,16 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
     torch::Tensor dx2 = torch::empty_like(xhat);
 
     // initiate data pointers for intermediate ops tensors
-    float *ptr_dxhat = dxhat.data_ptr<float>();  // 2-D (N, D)
-    float *ptr_divar = divar.data_ptr<float>();  // 1-D (N,)
-    float *ptr_dxmu1 = dxmu1.data_ptr<float>();  // 2-D (N, D)
-    float *ptr_dsqrtvar = dsqrtvar.data_ptr<float>();  // 1-D (N,)
-    float *ptr_dvar = dvar.data_ptr<float>();  // 1-D (N,)
-    float *ptr_dsq = dsq.data_ptr<float>();  // 2-D (N, D)
-    float *ptr_dxmu2 = dxmu2.data_ptr<float>();  // 2-D (N, D)
-    float *ptr_dx1 = dx1.data_ptr<float>();  // 2-D (N, D)
-    float *ptr_dmu = dmu.data_ptr<float>();  // 1-D (N,)
-    float *ptr_dx2 = dx2.data_ptr<float>();  // 2-D (N, D)
+    double *ptr_dxhat = dxhat.data_ptr<double>();  // 2-D (N, D)
+    double *ptr_divar = divar.data_ptr<double>();  // 1-D (N,)
+    double *ptr_dxmu1 = dxmu1.data_ptr<double>();  // 2-D (N, D)
+    double *ptr_dsqrtvar = dsqrtvar.data_ptr<double>();  // 1-D (N,)
+    double *ptr_dvar = dvar.data_ptr<double>();  // 1-D (N,)
+    double *ptr_dsq = dsq.data_ptr<double>();  // 2-D (N, D)
+    double *ptr_dxmu2 = dxmu2.data_ptr<double>();  // 2-D (N, D)
+    double *ptr_dx1 = dx1.data_ptr<double>();  // 2-D (N, D)
+    double *ptr_dmu = dmu.data_ptr<double>();  // 1-D (N,)
+    double *ptr_dx2 = dx2.data_ptr<double>();  // 2-D (N, D)
 
     // iterate through rows/groups
     for (int i = 0; i < n; i++) {
@@ -81,7 +81,7 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
         }
 
         // calculate gradient variance (w.r.t.) inverse variance
-        float divar_sum = 0.0f;
+        double divar_sum = 0.0f;
         for (int j = 0; j < dims; j++) {
             divar_sum += (ptr_dxhat[(i * dims) + j] * ptr_xmu[(i * dims) + j]);  // var accumulator
         }
@@ -110,7 +110,7 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
         }
 
         // calculate gradient (w.r.t.) mean
-        float dmu_sum = 0.0f;
+        double dmu_sum = 0.0f;
         for (int j = 0; j < dims; j++) {
             dmu_sum += ptr_dx1[(i * dims) + j];  // mean accumulator
         }

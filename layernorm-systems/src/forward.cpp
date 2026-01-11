@@ -7,7 +7,7 @@
 using namespace std;
 
 // function definition for performing forward pass on tensor via layer norm
-forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::Tensor beta, float epsilon) {
+forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::Tensor beta, double epsilon) {
 
     // validate tensors against input contract (rules)
     TORCH_CHECK(gamma.numel() == x.size(-1), "Gamma dimensions are unqual to last dimension of input tensor.")  // gamma lives on last dimension
@@ -27,8 +27,8 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
     vector<torch::Tensor> cache{};  // empty
 
     // create initial data pointers for tensors (input/output)
-    float *ptr_x = x.data_ptr<float>();
-    float *ptr_out = output.data_ptr<float>();
+    double *ptr_x = x.data_ptr<double>();
+    double *ptr_out = output.data_ptr<double>();
 
     // create calc tensors needed per-row/group
     torch::Tensor mu = torch::empty_like(x);  // mean
@@ -42,23 +42,23 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
     torch::Tensor xhat = torch::empty_like(x);  // normalization
 
     // initialize data pointers for each calc tensor
-    float *ptr_mu = mu.data_ptr<float>();
-    float *ptr_var = var.data_ptr<float>();
-    float *ptr_sqrtvar = sqrtvar.data_ptr<float>();
-    float *ptr_ivar = ivar.data_ptr<float>();
-    float *ptr_xmu = xmu.data_ptr<float>();
-    float *ptr_sq = sq.data_ptr<float>();
-    float *ptr_xhat = xhat.data_ptr<float>();
+    double *ptr_mu = mu.data_ptr<double>();
+    double *ptr_var = var.data_ptr<double>();
+    double *ptr_sqrtvar = sqrtvar.data_ptr<double>();
+    double *ptr_ivar = ivar.data_ptr<double>();
+    double *ptr_xmu = xmu.data_ptr<double>();
+    double *ptr_sq = sq.data_ptr<double>();
+    double *ptr_xhat = xhat.data_ptr<double>();
 
     // initialize data pointers for learnable parameter tensors
-    float *ptr_gam = gamma.data_ptr<float>();
-    float *ptr_bet = beta.data_ptr<float>();
+    double *ptr_gam = gamma.data_ptr<double>();
+    double *ptr_bet = beta.data_ptr<double>();
 
     // iterate through all groups/samples (rows)
     for (int i = 0; i < n; i++) {
 
         // calculate mean across features in dimension (center data, remove bias)
-        float mu_sum = 0.0f;  // track current row sum
+        double mu_sum = 0.0f;  // track current row sum
         for (int j = 0; j < dims; j++) {
             mu_sum += ptr_x[(i * dims) + j];  // move past prev rows then correct column
         }
@@ -71,7 +71,7 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
         }
 
         // calculate variance across features in dimension (spread of features)
-        float var_sum = 0.0f;  // track current row sum
+        double var_sum = 0.0f;  // track current row sum
         for (int j = 0; j < dims; j++) {
             var_sum += ptr_sq[(i * dims) + j];  // sum square center means
         }
@@ -94,7 +94,7 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
     // append intermediate operation tensors to cache vector
     cache.insert(end(cache), {gamma, xhat, xmu, sqrtvar, ivar, var});  // add tensor cache to end of vector
 
-    // (output tensor, learnable tensor, 3 calc tensors, 2 calc vectors, float constant)
-    return {output, cache, epsilon};  // return struct data types (output, floats (vectors), tensors)
+    // (output tensor, intermediate tensors, eps constant)
+    return {output, cache, epsilon};  // return struct data types
 
 }

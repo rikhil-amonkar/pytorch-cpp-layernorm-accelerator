@@ -94,8 +94,8 @@ TEST_CASE("Manual and PyTorch tensor outputs are computed") {
         torch::Tensor dbeta_manual = manual_bw_res.dbeta;  // dbeta
 
         // print all tensors for debugging (means, stds, and backward pass outputs)
-        cout << "\n===========================================" << endl;
-        cout << "Input Tensor SIZE: " << x_manual.sizes() << endl;
+        // cout << "\n===========================================" << endl;
+        // cout << "Input Tensor SIZE: " << x_manual.sizes() << endl;
         // cout << "===========================================" << endl;
         // cout << format("Manual FW LayerNorm MEAN: {:.4f} (should be ~0)", mean_manual) << endl;
         // cout << format("PyTorch FW LayerNorm MEAN: {:.4f} (should be ~0)", mean_torch) << endl;
@@ -106,19 +106,20 @@ TEST_CASE("Manual and PyTorch tensor outputs are computed") {
         // cout << "Manual BW LayerNorm DX:\n" << dx_manual << endl;
         // cout << "PyTorch BW LayerNorm DX:\n" << dx_torch << endl;
         // cout << "===========================================" << endl;
-        cout << "Manual BW LayerNorm DGAMMA:\n" << dgamma_manual.mean().item<float>() << endl;
-        cout << "PyTorch BW LayerNorm DGAMMA:\n" << dgamma_torch.mean().item<float>() << endl;
+        // cout << "Manual BW LayerNorm DGAMMA:\n" << dgamma_manual.mean().item<float>() << endl;
+        // cout << "PyTorch BW LayerNorm DGAMMA:\n" << dgamma_torch.mean().item<float>() << endl;
         // cout << "===========================================" << endl;
         // cout << "Manual BW LayerNorm DBETA:\n" << dbeta_manual << endl;
         // cout << "PyTorch BW LayerNorm DBETA:\n" << dbeta_torch << endl;
-        cout << "===========================================" << endl;
+        // cout << "===========================================" << endl;
 
         /* COMPARE MANUAL VS. BUILT IN BACKWARD (AND FORWARD) PASS */
 
-        auto diff = (dx_manual - dx_torch).abs();
-        cout << "max dx diff = " << diff.max().item<float>() << endl;
-        cout << "mean dx diff = " << diff.mean().item<float>() << endl;
-        cout << "L2 dx diff = " << diff.norm().item<float>() << endl;
+        // debug for tensor mid values
+        // auto diff = (dx_manual - dx_torch).abs();
+        // cout << "max dx diff = " << diff.max().item<float>() << endl;
+        // cout << "mean dx diff = " << diff.mean().item<float>() << endl;
+        // cout << "L2 dx diff = " << diff.norm().item<float>() << endl;
 
         // check output tensors against unit test catches (forward output)
         REQUIRE(manual_output.allclose(torch_result, 1e-4, 1e-7));  // check tensors with small error margin

@@ -32,12 +32,16 @@ add_executable(multiply_two_tensors tests/tensor_memory_cpp/multiply_two_tensors
 add_library(forward_pass_layernorm STATIC tests/forward_pass/forward_pass_layernorm.cpp)
 add_library(backward_pass_layernorm STATIC tests/backward_pass_autograd/backward_pass_layernorm.cpp)
 add_executable(unit_test tests/backward_pass_autograd/unit_test_layernorm.cpp)
+add_executable(row_vs_cols tests/memory_access_opt/row_vs_cols_access.cpp)
+add_executable(welfords_algo tests/memory_access_opt/welfords_algo.cpp)
 
 # set target libraries
 target_link_libraries(multiply_two_tensors "${TORCH_LIBRARIES}")
 target_link_libraries(forward_pass_layernorm "${TORCH_LIBRARIES}")
 target_link_libraries(backward_pass_layernorm PRIVATE forward_pass_layernorm "${TORCH_LIBRARIES}")
 target_link_libraries(unit_test PRIVATE forward_pass_layernorm backward_pass_layernorm "${TORCH_LIBRARIES}" Catch2::Catch2WithMain)
+target_link_libraries(row_vs_cols "${TORCH_LIBRARIES}")
+target_link_libraries(welfords_algo "${TORCH_LIBRARIES}")
 
 # Set rpath to find libtorch libraries at runtime
 set_target_properties(multiply_two_tensors PROPERTIES
@@ -64,4 +68,15 @@ set_target_properties(unit_test PROPERTIES
     INSTALL_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
     INSTALL_RPATH_USE_LINK_PATH TRUE
 )
-
+set_target_properties(row_vs_cols PROPERTIES
+    CXX_STANDARD 20
+    BUILD_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
+    INSTALL_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
+set_target_properties(welfords_algo PROPERTIES
+    CXX_STANDARD 20
+    BUILD_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
+    INSTALL_RPATH "$ENV{HOME}/Downloads/libtorch/lib"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)

@@ -58,7 +58,7 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
     for (int i = 0; i < n; i++) {
 
         // calculate mean across features in dimension (center data, remove bias)
-        double mu_sum = 0.0f;  // track current row sum
+        double mu_sum = 0.0;  // track current row sum
         for (int j = 0; j < dims; j++) {
             mu_sum += ptr_x[(i * dims) + j];  // move past prev rows then correct column
         }
@@ -71,7 +71,7 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
         }
 
         // calculate variance across features in dimension (spread of features)
-        double var_sum = 0.0f;  // track current row sum
+        double var_sum = 0.0;  // track current row sum
         for (int j = 0; j < dims; j++) {
             var_sum += ptr_sq[(i * dims) + j];  // sum square center means
         }

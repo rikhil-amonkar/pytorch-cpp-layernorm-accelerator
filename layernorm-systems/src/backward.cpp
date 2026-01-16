@@ -29,8 +29,8 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
 
     // create backpass output tensors
     torch::Tensor dx = torch::zeros_like(dout);
-    torch::Tensor dgamma = torch::zeros({dims}, dout.options());  // accumulator (gamma)
-    torch::Tensor dbeta = torch::zeros({dims}, dout.options());  // accumulator (beta)
+    torch::Tensor dgamma = torch::zeros({dims}, gamma.options());  // accumulator (gamma)
+    torch::Tensor dbeta = torch::zeros({dims}, gamma.options());  // accumulator (beta)
 
     // initiate data pointers for output tensors (element-wise ops)
     double *ptr_dx = dx.data_ptr<double>();  // 2-D (N, D)
@@ -81,7 +81,7 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
         }
 
         // calculate gradient variance (w.r.t.) inverse variance
-        double divar_sum = 0.0f;
+        double divar_sum = 0.0;
         for (int j = 0; j < dims; j++) {
             divar_sum += (ptr_dxhat[(i * dims) + j] * ptr_xmu[(i * dims) + j]);  // var accumulator
         }
@@ -93,32 +93,32 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
         }
 
         // calculate gradient (w.r.t.) squared variance via chain rule
-        ptr_dsqrtvar[i] = (-1.0f / (ptr_sqrtvar[i] * ptr_sqrtvar[i])) * ptr_divar[i];  // dsqrtvar
+        ptr_dsqrtvar[i] = (-1.0 / (ptr_sqrtvar[i] * ptr_sqrtvar[i])) * ptr_divar[i];  // dsqrtvar
 
         // calculate gradient (w.r.t.) variance via chain rule
-        ptr_dvar[i] = 0.5f * (1.0f / ptr_sqrtvar[i]) * ptr_dsqrtvar[i];  // dvar
+        ptr_dvar[i] = 0.5f * (1.0 / ptr_sqrtvar[i]) * ptr_dsqrtvar[i];  // dvar
 
         // calculate gradient (w.r.t.) squared deviations via chain rule
         for (int j = 0; j < dims; j++) {
-            ptr_dsq[(i * dims) + j] = (1.0f / dims) * ptr_dvar[i];  // dsq
+            ptr_dsq[(i * dims) + j] = (1.0 / dims) * ptr_dvar[i];  // dsq
         }
 
         // calculate components of gradient (w.r.t.) centered mean
         for (int j = 0; j < dims; j++) {
-            ptr_dxmu2[(i * dims) + j] = (2.0f * ptr_xmu[(i * dims) + j] * ptr_dsq[(i * dims) + j]);  // dxmu2
+            ptr_dxmu2[(i * dims) + j] = (2.0 * ptr_xmu[(i * dims) + j] * ptr_dsq[(i * dims) + j]);  // dxmu2
             ptr_dx1[(i * dims) + j] = (ptr_dxmu1[(i * dims) + j] + ptr_dxmu2[(i * dims) + j]);  // dx1
         }
 
         // calculate gradient (w.r.t.) mean
-        double dmu_sum = 0.0f;
+        double dmu_sum = 0.0;
         for (int j = 0; j < dims; j++) {
             dmu_sum += ptr_dx1[(i * dims) + j];  // mean accumulator
         }
-        ptr_dmu[i] = -1.0f * dmu_sum;  // dmu
+        ptr_dmu[i] = -1.0 * dmu_sum;  // dmu
 
         // calculate components of gradient (w.r.t.) mean computations
         for (int j = 0; j < dims; j++) {
-            ptr_dx2[(i * dims) + j] = (1.0f / dims) * ptr_dmu[i];  // dx2
+            ptr_dx2[(i * dims) + j] = (1.0 / dims) * ptr_dmu[i];  // dx2
         }
 
         // calculate final gradient using components (w.r.t.) input

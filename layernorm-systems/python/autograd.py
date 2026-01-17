@@ -1,9 +1,8 @@
-from mpmath import eps
 import torch
 from torch.utils.cpp_extension import load
 
 # path to c++ extensions
-CPP_PATH = "./layernorm-systems/src"
+CPP_PATH = "./layernorm-systems/optimized"
 
 # load layernorm c++ extensions
 lnext = load(
@@ -26,10 +25,10 @@ class LayerNorm(torch.autograd.Function):
         # call forward pass extension
         result = lnext.forward(x, gamma, beta, epsilon)
         output, cache = result.output, result.cache  # unpack
-        gamma, xhat, xmu, sqrtvar, ivar, var = cache  # seperate cache
+        gamma, xhat, xmu, sqrtvar, ivar = cache  # seperate cache
         
         # save intermediates in context for backward pass
-        ctx.save_for_backward(gamma, xhat, xmu, sqrtvar, ivar, var)
+        ctx.save_for_backward(gamma, xhat, xmu, sqrtvar, ivar)
         ctx.epsilon = 1e-5  # store epsilon
         
         return output
@@ -39,8 +38,8 @@ class LayerNorm(torch.autograd.Function):
     def backward(ctx, dout):
                  
         # retrieve cache from context
-        gamma, xhat, xmu, sqrtvar, ivar, var, = ctx.saved_tensors  # unpack
-        cache = gamma, xhat, xmu, sqrtvar, ivar, var  # store
+        gamma, xhat, xmu, sqrtvar, ivar, = ctx.saved_tensors  # unpack
+        cache = gamma, xhat, xmu, sqrtvar, ivar  # store
         epsilon = ctx.epsilon  # extract epsilon
         dout = dout.contiguous()  # convert to row-major
         

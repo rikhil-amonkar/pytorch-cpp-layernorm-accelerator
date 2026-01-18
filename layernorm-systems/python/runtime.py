@@ -99,12 +99,14 @@ def runTests(case):
     assert np.allclose(m_beta.grad.detach().numpy(), pt_dbeta.detach().numpy(), atol=1e-7, rtol=1e-10), f"FAILURE: Output BETA does not match!"
     # print("SUCCESS: Manual backward pass matches PyTorch!")
     
-    # time results
-    print(f"PyTorch Baseline Runtime for Forward Pass: {(pt_fw_end - pt_fw_start):.4f} seconds.")
-    print(f"Manual Baseline Runtime for Forward Pass: {(m_fw_end - m_fw_start):.4f} seconds.")
-    print(f"PyTorch Baseline Runtime for Backward Pass: {(pt_bw_end - pt_bw_start):.4f} seconds.")
-    print(f"Manual Baseline Runtime for Backward Pass: {(m_bw_end - m_bw_start):.4f} seconds.")
-    print("="*50)
+    # calculate elapsed times
+    pt_fw_elapsed = pt_fw_end - pt_fw_start
+    pt_bw_elapsed = m_fw_end - m_fw_start
+    m_fw_elapsed = pt_bw_end - pt_bw_start
+    m_bw_elapsed = m_bw_end - m_bw_start
+    
+    # accumlate times to average
+    return pt_fw_elapsed, pt_bw_elapsed, m_fw_elapsed, m_bw_elapsed
         
 if __name__ == "__main__":
     
@@ -115,74 +117,48 @@ if __name__ == "__main__":
         (5000, 256)
     ]
     
+    # eval runs (for time averages)
+    iterations = 1000
+    
     # loop through cases (super strict)
+    final_elapsed = {}
     for case in cases:
-        print("="*50)
-        print("CASE:", case)
-        print("="*50)
-        runTests(case)
+        pt_fw_elap_sum = 0
+        pt_bw_elap_sum = 0
+        m_fw_elap_sum = 0
+        m_bw_elap_sum = 0
+        for i in range(iterations):  # total test iterations
+                pt_fw_elapsed, pt_bw_elapsed, m_fw_elapsed, m_bw_elapsed = runTests(case)
+                pt_fw_elap_sum += pt_fw_elapsed
+                pt_bw_elap_sum += pt_bw_elapsed
+                m_fw_elap_sum += m_fw_elapsed
+                m_bw_elap_sum += m_bw_elapsed
+                
+        # store current case finals
+        final_elapsed[case] = [(pt_fw_elap_sum / iterations), (pt_bw_elap_sum / iterations), (m_fw_elap_sum / iterations), (m_bw_elap_sum / iterations)]
     
-    print("\nAll test cases succeeded!")
+    print("="*55)
+    print(f"Total of {iterations} elapsed time tests have completed.")
     
-"""=
-*********** RESULTS BEFORE (BASELINES) *********** 
+    # display time results
+    if len(final_elapsed) > 0:
+        for case, elapsed in final_elapsed.items():
+            pt_fw_avg_time, pt_bw_avg_time, m_fw_avg_time, m_bw_avg_time = elapsed
+            print("="*55)
+            print("CASE:", case)
+            print("="*55)
+            print(f"AVG. PyTorch FW Elapsed Runtime: {pt_fw_avg_time:.4f} seconds.")
+            print(f"AVG. Manual FW Elapsed Runtime: {m_fw_avg_time:.4f} seconds.")
+            print(f"AVG. PyTorch BW Elapsed Runtime: {pt_bw_avg_time:.4f} seconds.")
+            print(f"AVG. Manual BW Elapsed Runtime: {m_bw_avg_time:.4f} seconds.")
+            print("="*55)
+    else:
+        print("No results!")
+        exit()
+    
 
-==================================================
-CASE: (100, 512)
-==================================================
-PyTorch Baseline Runtime for Forward Pass: 0.0002 seconds.
-Manual Baseline Runtime for Forward Pass: 0.0005 seconds.
-PyTorch Baseline Runtime for Backward Pass: 0.0105 seconds.
-Manual Baseline Runtime for Backward Pass: 0.0011 seconds.
-==================================================
-==================================================
-CASE: (1000, 1024)
-==================================================
-PyTorch Baseline Runtime for Forward Pass: 0.0005 seconds.
-Manual Baseline Runtime for Forward Pass: 0.0084 seconds.
-PyTorch Baseline Runtime for Backward Pass: 0.0030 seconds.
-Manual Baseline Runtime for Backward Pass: 0.0227 seconds.
-==================================================
-==================================================
-CASE: (5000, 256)
-==================================================
-PyTorch Baseline Runtime for Forward Pass: 0.0006 seconds.
-Manual Baseline Runtime for Forward Pass: 0.0109 seconds.
-PyTorch Baseline Runtime for Backward Pass: 0.0022 seconds.
-Manual Baseline Runtime for Backward Pass: 0.0236 seconds.
-==================================================
 
-All test cases succeeded!
 
-*********** RESULTS AFTER OPTIMIZATION *********** 
-
-==================================================
-CASE: (100, 512)
-==================================================
-PyTorch Baseline Runtime for Forward Pass: 0.0002 seconds.
-Manual Baseline Runtime for Forward Pass: 0.0005 seconds.
-PyTorch Baseline Runtime for Backward Pass: 0.0095 seconds.
-Manual Baseline Runtime for Backward Pass: 0.0006 seconds.
-==================================================
-==================================================
-CASE: (1000, 1024)
-==================================================
-PyTorch Baseline Runtime for Forward Pass: 0.0005 seconds.
-Manual Baseline Runtime for Forward Pass: 0.0068 seconds.
-PyTorch Baseline Runtime for Backward Pass: 0.0021 seconds.
-Manual Baseline Runtime for Backward Pass: 0.0108 seconds.
-==================================================
-==================================================
-CASE: (5000, 256)
-==================================================
-PyTorch Baseline Runtime for Forward Pass: 0.0006 seconds.
-Manual Baseline Runtime for Forward Pass: 0.0081 seconds.
-PyTorch Baseline Runtime for Backward Pass: 0.0022 seconds.
-Manual Baseline Runtime for Backward Pass: 0.0131 seconds.
-==================================================
-
-All test cases succeeded!
-"""
     
     
     

@@ -71,7 +71,7 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
         ptr_sqrtvar[i] = sqrt(((var_sum / dims) + epsilon));  // add constant (prevent div by 0)
 
         // invert standard deviation (for each row)
-        ptr_ivar[i] = 1 / ptr_sqrtvar[i];
+        ptr_ivar[i] = 1.0 / ptr_sqrtvar[i];
 
         // execute normalization and apply learnable parameters
         for (int j = 0; j < dims; j++) {

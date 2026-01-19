@@ -17,6 +17,7 @@ def createTensors(device):
 # test with cpu
 device = torch.device("mps")
 x, y = createTensors(device)
+print(f"Using Device: {device}")
 
 # create a timer instance
 timer = Timer(

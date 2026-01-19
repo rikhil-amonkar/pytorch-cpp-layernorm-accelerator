@@ -4,7 +4,7 @@ import numpy as np
 from torch.utils.cpp_extension import load
 
 # define path to c++ extensions
-CPP_PATH = "./layernorm-systems/src"
+CPP_PATH = "./layernorm-systems/optimized"
 
 # load c++ extensions
 layernorm_ext = load(
@@ -35,10 +35,10 @@ def createSampleData(case):
 
     # create sample data (samples, dimensions)
     n_samples, embedding_dim = case
-    x = torch.randn(n_samples, embedding_dim)  # pytorch tensor for built-in layernorm
-    target = torch.randn(n_samples, embedding_dim)  # pytorch target tensor for loss
-    gamma = torch.ones(embedding_dim)
-    beta = torch.zeros(embedding_dim)
+    x = torch.randn((n_samples, embedding_dim), dtype=torch.float64)  # pytorch tensor for built-in layernorm
+    target = torch.randn((n_samples, embedding_dim), dtype=torch.float64)  # pytorch target tensor for loss
+    gamma = torch.ones((embedding_dim), dtype=torch.float64)
+    beta = torch.zeros((embedding_dim), dtype=torch.float64)
     
     return x, target, embedding_dim, gamma, beta
 
@@ -52,8 +52,8 @@ def pyTorchLayerNorm(dims):
     
     # set pytorch layernorm to use default ones/zeroes (similar to manual)
     with torch.no_grad():
-        ptln.weight.data = torch.ones(dims)  # gamma for built-in
-        ptln.bias.data = torch.zeros(dims)  # beta for built-in
+        ptln.weight.data = torch.ones((dims), dtype=torch.float64)  # gamma for built-in
+        ptln.bias.data = torch.zeros((dims), dtype=torch.float64)  # beta for built-in
     
     return ptln
 
@@ -84,7 +84,7 @@ def forwardPassUnitTest(x, ptln, gamma, beta):
     return pass_check, output_pytorch, output_manual_out, output_manual_cache, output_manual_eps
 
 # unit test for backward pass function (built-in vs manual)
-def backwardPassUnitTest(x, target, ptln, gamma, beta, output_pytorch, output_manual, cache_manual, epsilon):
+def backwardPassUnitTest(x, target, ptln, output_manual, cache_manual, epsilon):
     
     print("\n=== RUNNING BACKWARD PASS UNIT TEST ===\n")
     pass_check = False        
@@ -163,14 +163,13 @@ def runTests():
         ptln = pyTorchLayerNorm(dims)  # initialize pytorch layernorm
         
         # test forward pass
-        pass_check_fw, output_pytorch, output_manual, cache_manual, epsilon = forwardPassUnitTest(
+        pass_check_fw, _, output_manual, cache_manual, epsilon = forwardPassUnitTest(
             x, ptln, gamma, beta
         )
         
         # test backward pass
         pass_check_bw = backwardPassUnitTest(
-            x, target, ptln, gamma, beta, output_pytorch, 
-            output_manual, cache_manual, epsilon
+            x, target, ptln, output_manual, cache_manual, epsilon
         )
 
         # update passed cases

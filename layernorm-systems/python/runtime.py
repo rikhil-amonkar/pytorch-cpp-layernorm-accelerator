@@ -17,16 +17,16 @@ def runTests(case):
     # ========== PYTORCH LAYERNORM ==========
 
     # pt input tensor data
-    pt_x = torch.rand((n, dims), dtype=torch.float64, requires_grad=True)  # input
-    pt_target = torch.rand((n, dims), dtype=torch.float64)  # target for loss
+    pt_x = torch.rand((n, dims), dtype=torch.float32, requires_grad=True)  # input
+    pt_target = torch.rand((n, dims), dtype=torch.float32)  # target for loss
     
     # pytorch layer normalization function
     ptln = nn.LayerNorm(dims)
 
     # reset pytorch learn-param grads
     with torch.no_grad():
-        ptln.weight.data = torch.ones(dims, dtype=torch.float64, requires_grad=True)  # pt gamma
-        ptln.bias.data = torch.zeros(dims, dtype=torch.float64, requires_grad=True)  # pt beta
+        ptln.weight.data = torch.ones(dims, dtype=torch.float32, requires_grad=True)  # pt gamma
+        ptln.bias.data = torch.zeros(dims, dtype=torch.float32, requires_grad=True)  # pt beta
         
     # pt backward pass start timer
     pt_fw_start = time.perf_counter()
@@ -57,10 +57,10 @@ def runTests(case):
     # ========== MANUAL LAYERNORM ==========
 
     # manual input tensor data
-    m_x = pt_x.clone().detach().to(torch.float64).requires_grad_(True)  # input (leaf)
-    m_gamma = torch.ones((dims), dtype=torch.float64, requires_grad=True)  # scale
-    m_beta = torch.zeros((dims), dtype=torch.float64, requires_grad=True)  # shift 
-    m_target = pt_target.clone().detach().to(torch.float64)  # target for loss (leaf)
+    m_x = pt_x.clone().detach().to(torch.float32).requires_grad_(True)  # input (leaf)
+    m_gamma = torch.ones((dims), dtype=torch.float32, requires_grad=True)  # scale
+    m_beta = torch.zeros((dims), dtype=torch.float32, requires_grad=True)  # shift 
+    m_target = pt_target.clone().detach().to(torch.float32)  # target for loss (leaf)
     
     # manual forward pass start timer
     m_fw_start = time.perf_counter()
@@ -92,17 +92,18 @@ def runTests(case):
 
     # abs tol (atol) --> near-zero values, how close they are
     # rel tol (rtol) --> percent error (magnitude of num)
+    # float32 has less precision than float64 --> but faster access
 
     # use assertion to check success or failure for matching values
-    assert np.allclose(m_x.grad.detach().numpy(), pt_dx.detach().numpy(), atol=1e-7, rtol=1e-10), f"FAILURE: Output DX does not match!"
-    assert np.allclose(m_gamma.grad.detach().numpy(), pt_dgamma.detach().numpy(), atol=1e-7, rtol=1e-10), f"FAILURE: Output GAMMA does not match!"
-    assert np.allclose(m_beta.grad.detach().numpy(), pt_dbeta.detach().numpy(), atol=1e-7, rtol=1e-10), f"FAILURE: Output BETA does not match!"
+    assert np.allclose(m_x.grad.detach().numpy(), pt_dx.detach().numpy(), atol=1e-4, rtol=1e-4), f"FAILURE: Output DX does not match!"
+    assert np.allclose(m_gamma.grad.detach().numpy(), pt_dgamma.detach().numpy(), atol=1e-4, rtol=1e-4), f"FAILURE: Output GAMMA does not match!"
+    assert np.allclose(m_beta.grad.detach().numpy(), pt_dbeta.detach().numpy(), atol=1e-4, rtol=1e-4), f"FAILURE: Output BETA does not match!"
     # print("SUCCESS: Manual backward pass matches PyTorch!")
     
     # calculate elapsed times
     pt_fw_elapsed = pt_fw_end - pt_fw_start
-    pt_bw_elapsed = m_fw_end - m_fw_start
-    m_fw_elapsed = pt_bw_end - pt_bw_start
+    pt_bw_elapsed = pt_bw_end - pt_bw_start
+    m_fw_elapsed = m_fw_end - m_fw_start
     m_bw_elapsed = m_bw_end - m_bw_start
     
     # accumlate times to average

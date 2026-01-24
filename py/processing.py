@@ -74,7 +74,7 @@ if __name__ == "__main__":
             stmt="""
             import torch
             import torch.nn as nn
-            from autograd import LayerNorm
+            from py.autograd import LayerNorm
             
             # limit randomness
             torch.manual_seed(42)

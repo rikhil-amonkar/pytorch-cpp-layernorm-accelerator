@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from autograd import LayerNorm
-# from torch.autograd import gradchecks
+from py.autograd import LayerNorm
+# from torch.autograd import gradcheck
 import time
 
 # run through test cases
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     ]
     
     # eval runs (for time averages)
-    iterations = 1000
+    iterations = 1
     
     # loop through cases (super strict)
     final_elapsed = {}

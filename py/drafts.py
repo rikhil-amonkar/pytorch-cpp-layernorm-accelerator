@@ -4,7 +4,7 @@ import numpy as np
 from torch.utils.cpp_extension import load
 
 # define path to c++ extensions
-CPP_PATH = "./layernorm-systems/optimized"
+CPP_PATH = "./optimized"
 
 # load c++ extensions
 layernorm_ext = load(

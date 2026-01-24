@@ -1,13 +1,14 @@
 #include <torch/torch.h>
 #include <vector>
 #include <iostream>
+#include <cstdlib>
 #include <algorithm>
 #include "forward.h"
 
 using namespace std;
 
 // function definition for performing forward pass on tensor via layer norm
-forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::Tensor beta, float epsilon) {
+forwardOutput forwardPassLayerNormCPU(torch::Tensor x, torch::Tensor gamma, torch::Tensor beta, float epsilon) {
 
     // validate tensors against input contract (rules)
     TORCH_CHECK(gamma.numel() == x.size(-1), "Gamma dimensions are unqual to last dimension of input tensor.")  // gamma lives on last dimension
@@ -86,5 +87,21 @@ forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::
 
     // (output tensor, intermediate tensors, eps constant)
     return {output, cache, epsilon};  // return struct data types
+
+}
+
+// function to check device and pass based on cpu vs cuda (cuda in future)
+forwardOutput forwardPassLayerNorm(torch::Tensor x, torch::Tensor gamma, torch::Tensor beta, float epsilon) {
+
+    // check which device tensor was stored on
+    if (x.device().is_cpu()) {
+        return forwardPassLayerNormCPU(x, gamma, beta, epsilon);  // cpu function
+    } else if (x.device().is_cuda()) {
+        cerr << "WARNING: CUDA is not yet implemented. Will use in future. Use CPU instead!" << endl;  // warning incase cuda
+        exit(1);  // default return
+    } else {
+        cerr << "WARNING: Unsupported device type. Will not be able to run program. Use CPU instead!" << endl;  // incorrect type case
+        exit(1);  // default return
+    }
 
 }

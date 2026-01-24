@@ -1,13 +1,14 @@
 #include <torch/torch.h>
 #include <vector>
 #include <iostream>
+#include <cstdlib>
 #include <cmath>
 #include "backward.h"
 
 using namespace std;
 
 // function definition for performing backward pass on output and cache via layernorm
-backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> cache, float epsilon) {
+backwardOutput backwardPassLayerNormCPU(torch::Tensor dout, vector<torch::Tensor> cache, float epsilon) {
 
     // extract intermediate values from forward pass cache (also guarantee row-major)
     torch::Tensor gamma = cache[0].contiguous();  // 1-D
@@ -81,5 +82,21 @@ backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> c
     }
 
     return {dx, dgamma, dbeta};  // return outputs (3 tensors)
+
+}
+
+// function to check device and pass based on cpu vs cuda (cuda in future)
+backwardOutput backwardPassLayerNorm(torch::Tensor dout, vector<torch::Tensor> cache, float epsilon) {
+
+    // check which device tensor was stored on
+    if (dout.device().is_cpu()) {
+        return backwardPassLayerNormCPU(dout, cache, epsilon);  // cpu function
+    } else if (dout.device().is_cuda()) {
+        cerr << "WARNING: CUDA is not yet implemented. Will use in future. Use CPU instead!" << endl;  // warning incase cuda
+        exit(1);  // default return
+    } else {
+        cerr << "WARNING: Unsupported device type. Will not be able to run program. Use CPU instead!" << endl;  // incorrect type case
+        exit(1);  // default return
+    }
 
 }

@@ -6,7 +6,7 @@ optimize = True
 if optimize:
 
     # path to c++ extensions
-    CPP_PATH = "./layernorm-systems/optimized"
+    CPP_PATH = "./optimized"
 
     # load layernorm c++ extensions
     lnext = load(
@@ -56,7 +56,7 @@ if optimize:
 else:
 
     # path to c++ extensions
-    CPP_PATH = "./layernorm-systems/src"
+    CPP_PATH = "./cpp"
 
     # load layernorm c++ extensions
     lnext = load(

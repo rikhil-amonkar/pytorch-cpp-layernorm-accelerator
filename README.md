@@ -98,7 +98,7 @@ Project is complete. Cleaning up the repository to better showcase the work and 
 
 ---
 
-## Some Screenshots / Graphs / Tables Throughout the Project (also updated on LinkedIn)
+## Some Screenshots / Graphs / Tables Throughout the Project
 
 ### Runtime Comparison for CPU vs. MPS with PyTorch LayerNorm
 
@@ -153,5 +153,6 @@ Results from comparing the custom C++ extension autograd function to the built-i
 ## Dev Background
 
 **Rikhil Amonkar | CS @ Drexel University**
-- **Experience:** ML Engineer Co-op @ Lockheed Martin | AI Research Engineer @ Drexel University
-- **Contact:** rikhilma@gmail.com
+- **Experience**: ML Engineer Co-op @ Lockheed Martin | AI Research Engineer @ Drexel University
+- **Contact**: rikhilma@gmail.com
+- **LinkedIn**: [rikhil-amonkar](https://www.linkedin.com/in/rikhil-amonkar/)

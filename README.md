@@ -65,7 +65,7 @@ python main.py
 
 - **[docs/](./docs/)** - Documentation files covering implementation notes, performance results, CUDA architecture, and development notes for each phase of the project.
 
-- **[media/](./media/)** - Screenshots, graphs, and visualizations showing runtime comparisons, code examples, and test results.
+- **[media/](./media/)** - Screenshots, graphs, and visualizations showing runtime comparisons, code examples, and test results. A lot taken from the updates posted on LinkedIn incase anything ever needs to be references.
 
 ## Progress Timeline
 
